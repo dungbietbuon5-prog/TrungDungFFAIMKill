@@ -1,0 +1,38 @@
+name: Build FF Dylib
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-13
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Install Dependencies & Theos
+      run: |
+        # Cài đặt ldid (công cụ ký file tweak)
+        brew install ldid
+        
+        # Cài đặt Theos
+        export THEOS=$HOME/theos
+        git clone --recursive https://github.com/theos/theos.git $THEOS
+        sudo $THEOS/bin/nic.pl <<< "13" || true
+
+    - name: Build Tweak
+      run: |
+        export THEOS=$HOME/theos
+        make clean
+        # Lệnh này chỉ build ra file .dylib, không đóng gói .deb
+        make
+
+    - name: Upload Dylib
+      uses: actions/upload-artifact@v4
+      with:
+        name: TrungDungFF-Dylib
+        # Lấy file .dylib từ thư mục build của Theos
+        path: .theos/obj/debug/TrungDungFF.dylib
